@@ -1,12 +1,20 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    openssh-client \
-    curl \
-    wget \
-    gnupg2 \
-    software-properties-common \
-    tmate
+ENV container docker
+STOPSIGNAL SIGRTMIN+3
 
-CMD ["tmate", "-F"]
+# base packages
+RUN apt-get update && apt-get install -y \
+    systemd systemd-sysv dbus \
+    sudo curl wget iproute2 \
+    tmate openssh-server docker.io \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ssh setup
+RUN mkdir -p /run/sshd && \
+    echo "root:root" | chpasswd && \
+    systemctl enable ssh
+
+VOLUME [ "/sys/fs/cgroup" ]
+
+CMD ["/sbin/init"]
